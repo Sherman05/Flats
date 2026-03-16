@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LuxStay Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F4F5;--white:#fff;--ink:#18181B;--ink2:#3F3F46;--ink3:#71717A;--ink4:#A1A1AA;--line:#E4E4E7;--blue:#3B82F6;--green:#22C55E;--red:#EF4444;--gold:#D97706;--r:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;}
+/* LAYOUT */
+.wrap{display:grid;grid-template-columns:260px 1fr;min-height:100vh;}
+/* SIDEBAR */
+aside{background:var(--ink);color:#fff;padding:24px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.aside-logo{padding:0 24px 24px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);}
+.aside-logo span{opacity:.5;font-weight:400;}
+.aside-nav{flex:1;padding:16px 0;overflow-y:auto;}
+.aside-section{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:14px 24px 6px;}
+.aside-item{display:flex;align-items:center;gap:10px;padding:10px 24px;cursor:pointer;transition:background .15s;border-radius:0;font-size:13px;font-weight:500;color:rgba(255,255,255,.65);}
+.aside-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.aside-item.on{background:rgba(255,255,255,.12);color:#fff;}
+.aside-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-empty{background:var(--ink3);}
+.dot-draft{background:var(--gold);}
+.dot-live{background:var(--green);}
+.aside-footer{padding:16px 24px;border-top:1px solid rgba(255,255,255,.1);}
+.aside-footer a{font-size:12px;color:rgba(255,255,255,.35);text-decoration:none;}
+.aside-footer a:hover{color:rgba(255,255,255,.7);}
+/* MAIN */
+main{padding:32px;overflow-y:auto;}
+.page{display:none;}
+.page.on{display:block;}
+/* HEADER */
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;}
+.page-head h1{font-size:22px;font-weight:700;}
+.page-head p{font-size:13px;color:var(--ink3);margin-top:4px;}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.stat-card{background:var(--white);border-radius:var(--r);padding:20px;border:1px solid var(--line);}
+.stat-card .val{font-size:28px;font-weight:700;margin-bottom:4px;}
+.stat-card .lbl{font-size:12px;color:var(--ink3);}
+.stat-card .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;}
+/* APT EDITOR */
+.apt-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.apt-grid.g3{grid-template-columns:1fr 1fr 1fr;}
+.apt-grid.g1{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);}
+.field input,.field select,.field textarea{padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--white);outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);}
+.field textarea{resize:vertical;min-height:80px;line-height:1.55;}
+.field .hint{font-size:11px;color:var(--ink4);line-height:1.5;}
+/* PANELS */
+.panel{background:var(--white);border-radius:var(--r);border:1px solid var(--line);margin-bottom:16px;overflow:hidden;}
+.panel-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.panel-head h2{font-size:15px;font-weight:700;}
+.panel-body{padding:20px;}
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:20px;}
+.tab{flex:1;padding:8px;border-radius:6px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;color:var(--ink3);transition:all .15s;}
+.tab.on{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+/* BTNS */
+.btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:#27272A;}
+.btn-success{background:var(--green);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn-outline:hover{border-color:var(--ink);}
+.btn-sm{padding:7px 14px;font-size:12px;}
+.btn:disabled{opacity:.4;cursor:default;}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--bg);}
+/* BADGE */
+.badge{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:50px;}
+.badge-live{background:#DCFCE7;color:#15803D;}
+.badge-draft{background:#FEF9C3;color:#92400E;}
+.badge-empty{background:var(--bg);color:var(--ink4);}
+.badge-conf{background:#DBEAFE;color:#1D4ED8;}
+.badge-canc{background:#FEE2E2;color:#B91C1C;}
+/* RC STATUS */
+.rc-ok{color:var(--green);font-weight:600;}
+.rc-no{color:var(--ink4);}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;}
+.toast.on{transform:translateY(0);opacity:1;}
+.toast.err{background:var(--red);}
+/* SYNC STATUS */
+.sync-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);}
+.sync-row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="aside-logo">LuxStay <span>Admin</span></div>
+  <nav class="aside-nav">
+    <div class="aside-section">Обзор</div>
+    <div class="aside-item on" onclick="nav('dash')">📊 Дашборд</div>
+    <div class="aside-item" onclick="nav('bookings')">📋 Брони</div>
+    <div class="aside-item" onclick="nav('sync')">🔄 Синхронизация RC</div>
+
+    <div class="aside-section" style="margin-top:8px">Квартиры</div>
+    <div id="apt-nav"></div>
+  </nav>
+  <div class="aside-footer">
+    <a href="/" target="_blank">← Открыть сайт</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+  <!-- DASH -->
+  <div class="page on" id="p-dash">
+    <div class="page-head">
+      <div><h1>Дашборд</h1><p>Статус системы и статистика</p></div>
+      <button class="btn btn-outline btn-sm" onclick="loadDash()">↻ Обновить</button>
+    </div>
+    <div class="cards" id="dash-stats"></div>
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-head"><h2>Последние брони</h2></div>
+      <div class="panel-body" id="dash-bookings"></div>
+    </div>
+  </div>
+
+  <!-- BOOKINGS -->
+  <div class="page" id="p-bookings">
+    <div class="page-head">
+      <div><h1>Все брони</h1><p>Полный список бронирований</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-body" id="bookings-table"></div>
+    </div>
+  </div>
+
+  <!-- SYNC -->
+  <div class="page" id="p-sync">
+    <div class="page-head">
+      <div><h1>Синхронизация RC</h1><p>Статус iCal-связки с RealtyCalendar</p></div>
+      <button class="btn btn-primary btn-sm" onclick="forceSync()">⚡ Синхронизировать сейчас</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Как подключить RealtyCalendar</h2>
+      </div>
+      <div class="panel-body">
+        <p style="line-height:1.75;color:var(--ink2);margin-bottom:16px">
+          <strong>Шаг 1 — Экспорт из RC (RC → ваш сервер):</strong><br>
+          RC → Менеджер каналов → иконка объекта → iCalendar → скопировать ссылку <strong>Экспорт</strong><br>
+          → вставить в поле «RC iCal URL» у каждой квартиры ниже
+        </p>
+        <p style="line-height:1.75;color:var(--ink2);margin-bottom:16px">
+          <strong>Шаг 2 — Импорт в RC (ваш сервер → RC):</strong><br>
+          RC → Менеджер каналов → иконка объекта → iCalendar → поле <strong>Импорт</strong><br>
+          → вставить: <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:12px">https://ВАШ_ДОМЕН/api/ical/apt-1</code> (для каждой квартиры)
+        </p>
+        <p style="line-height:1.75;color:var(--ink2)">
+          <strong>Шаг 3 — Webhook (мгновенные обновления):</strong><br>
+          RC → Настройки → Интеграция → Webhook<br>
+          → вставить: <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:12px">https://ВАШ_ДОМЕН/api/webhook/rc</code>
+        </p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Статус синхронизации квартир</h2></div>
+      <div class="panel-body" id="sync-status"></div>
+    </div>
+  </div>
+
+  <!-- APT EDITOR -->
+  <div class="page" id="p-apt">
+    <div class="page-head">
+      <div><h1 id="apt-page-title">Квартира</h1><p id="apt-page-sub">Заполните данные</p></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline btn-sm" onclick="toggleActive()" id="btn-toggle-active">Активировать</button>
+        <button class="btn btn-primary" onclick="saveApt()" id="btn-save">💾 Сохранить</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" onclick="aptTab(this,0)">Основное</div>
+      <div class="tab" onclick="aptTab(this,1)">Фото & Удобства</div>
+      <div class="tab" onclick="aptTab(this,2)">RC Интеграция</div>
+    </div>
+
+    <!-- TAB 0: BASIC -->
+    <div id="apt-tab-0">
+      <div class="panel">
+        <div class="panel-head"><h2>Основная информация</h2></div>
+        <div class="panel-body">
+          <div class="apt-grid g1" style="margin-bottom:16px">
+            <div class="field"><label>Название апартаментов *</label><input id="f-title" placeholder="Панорамный пентхаус в Москва-Сити"></div>
+          </div>
+          <div class="apt-grid">
+            <div class="field"><label>Город *</label><input id="f-city" placeholder="Москва"></div>
+            <div class="field"><label>Адрес</label><input id="f-address" placeholder="ул. Примерная, 1"></div>
+          </div>
+          <div class="apt-grid g1" style="margin-top:16px">
+            <div class="field"><label>Короткое описание (для карточки)</label><input id="f-short" placeholder="Пентхаус с панорамным видом на 58 этаже"></div>
+          </div>
+          <div class="apt-grid g1" style="margin-top:16px">
+            <div class="field"><label>Полное описание</label><textarea id="f-desc" placeholder="Подробное описание апартаментов..."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Параметры</h2></div>
+        <div class="panel-body">
+          <div class="apt-grid g3">
+            <div class="field"><label>Цена за ночь (₽) *</label><input id="f-price" type="number" placeholder="15000"></div>
+            <div class="field"><label>Гостей (макс)</label><input id="f-guests" type="number" placeholder="2"></div>
+            <div class="field"><label>Комнат</label><input id="f-rooms" type="number" placeholder="1"></div>
+          </div>
+          <div class="apt-grid g3" style="margin-top:16px">
+            <div class="field"><label>Площадь (м²)</label><input id="f-area" type="number" placeholder="40"></div>
+            <div class="field"><label>Этаж</label><input id="f-floor" type="number" placeholder="5"></div>
+            <div class="field"><label>Рейтинг</label><input id="f-rating" type="number" step="0.01" placeholder="4.90"></div>
+          </div>
+          <div class="apt-grid" style="margin-top:16px">
+            <div class="field"><label>Кол-во отзывов</label><input id="f-reviews" type="number" placeholder="0"></div>
+            <div class="field"><label>Теги (через запятую)</label><input id="f-tags" placeholder="penthouse, moscow, loft, studio, kazan, istanbul, antalya"></div>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="f-instant" style="width:16px;height:16px">
+            <label for="f-instant" style="font-size:13px;font-weight:500;cursor:pointer">⚡ Мгновенное бронирование</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: PHOTOS & AMENITIES -->
+    <div id="apt-tab-1" style="display:none">
+      <div class="panel">
+        <div class="panel-head"><h2>Фотографии</h2></div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--ink3);margin-bottom:14px">Вставьте URL фотографий (по одному на строку). Первое фото — обложка.</p>
+          <div class="field"><label>URLs фотографий</label><textarea id="f-photos" style="min-height:140px;font-size:12px;line-height:1.8" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg&#10;https://example.com/photo3.jpg"></textarea></div>
+          <div id="photos-preview" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Удобства</h2></div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--ink3);margin-bottom:14px">Нажмите чтобы выбрать или снять удобство:</p>
+          <div id="amenities-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+          <div class="field" style="margin-top:10px"><label>Свои удобства (через запятую)</label><input id="f-amenities-custom" placeholder="Сауна, Камин, Вид на море"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: RC -->
+    <div id="apt-tab-2" style="display:none">
+      <div class="panel">
+        <div class="panel-head"><h2>RealtyCalendar интеграция</h2></div>
+        <div class="panel-body">
+          <div class="field" style="margin-bottom:20px">
+            <label>RC iCal URL (Экспорт из RC) — RC → занятые даты → сайт</label>
+            <input id="f-rcExport" placeholder="https://new.realtycalendar.ru/ical/...">
+            <div class="hint" style="margin-top:5px">RC → Менеджер каналов → иконка объекта → iCalendar → ссылка <strong>Экспорт</strong></div>
+          </div>
+          <div class="field">
+            <label>Ссылка для импорта В RC (для справки)</label>
+            <input id="f-rcImport" readonly style="background:var(--bg);color:var(--ink3)">
+            <div class="hint" style="margin-top:5px">Эту ссылку вставьте в RC → Менеджер каналов → iCalendar → <strong>Импорт</strong>. RC будет читать брони с вашего сайта.</div>
+          </div>
+          <div style="margin-top:20px;padding:14px;background:var(--bg);border-radius:8px">
+            <p style="font-size:12px;color:var(--ink3);line-height:1.7">
+              <strong>Как работает:</strong> Ваш сервер каждые 15 мин читает iCal из RC и кэширует занятые даты.
+              При бронировании на сайте — запись идёт в БД, RC подхватит при следующем импорте вашего iCal.
+              При подключении Webhook — RC уведомит ваш сервер сразу при новой брони → мгновенное обновление.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const AMENITY_LIST = ['WiFi','Кондиционер','Кухня','Холодильник','Стиральная машина','Посудомойка','Телевизор','Smart TV','Парковка','Лифт','Консьерж','Бассейн','Джакузи','Сауна','Спортзал','Терраса','Балкон','Вид на город','Вид на реку','Детская кроватка'];
+let selectedAmenities = new Set();
+let curAptId = null;
+let curAptData = null;
+
+// ── NAV ──
+function nav(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.aside-item').forEach(el => el.classList.remove('on'));
+  document.getElementById('p-' + p)?.classList.add('on');
+  event?.currentTarget?.classList.add('on');
+  if (p === 'dash') loadDash();
+  if (p === 'bookings') loadBookings();
+  if (p === 'sync') loadSync();
+}
+
+function navApt(id) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.aside-item').forEach(el => el.classList.remove('on'));
+  document.getElementById('p-apt').classList.add('on');
+  document.querySelectorAll('[data-apt-id]').forEach(el => el.classList.toggle('on', el.dataset.aptId === id));
+  loadAptEditor(id);
+}
+
+// ── API ──
+async function req(url, opts = {}) {
+  try { return await (await fetch(url, opts)).json(); } catch { return null; }
+}
+
+// ── SIDEBAR APT NAV ──
+async function loadSidebarApts() {
+  const apts = await req('/api/admin/apartments');
+  if (!apts) return;
+  const el = document.getElementById('apt-nav');
+  el.innerHTML = apts.map(a => {
+    const dot = !a.title ? 'dot-empty' : a.active ? 'dot-live' : 'dot-draft';
+    return `<div class="aside-item" data-apt-id="${a.id}" onclick="navApt('${a.id}')">
+      <span class="aside-dot ${dot}"></span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${a.title || a.id}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+// ── DASH ──
+async function loadDash() {
+  const [apts, bookings] = await Promise.all([req('/api/admin/apartments'), req('/api/admin/bookings')]);
+  if (!apts || !bookings) return;
+  const live  = apts.filter(a => a.active && a.title).length;
+  const draft = apts.filter(a => !a.active || !a.title).length;
+  const today = new Date().toISOString().slice(0,10);
+  const todayB = bookings.filter(b => b.createdAt?.slice(0,10) === today).length;
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card"><div class="val">${live}</div><div class="lbl"><span class="dot dot-live"></span>Активных квартир</div></div>
+    <div class="stat-card"><div class="val">${draft}</div><div class="lbl"><span class="dot dot-draft"></span>Черновиков</div></div>
+    <div class="stat-card"><div class="val">${bookings.filter(b=>b.status==='confirmed').length}</div><div class="lbl">Всего броней</div></div>
+    <div class="stat-card"><div class="val">${todayB}</div><div class="lbl">Броней сегодня</div></div>
+  `;
+  const last5 = bookings.slice(0, 5);
+  document.getElementById('dash-bookings').innerHTML = last5.length
+    ? `<table class="tbl"><thead><tr><th>Гость</th><th>Квартира</th><th>Заезд</th><th>Выезд</th><th>Сумма</th><th>Статус</th></tr></thead>
+       <tbody>${last5.map(b=>`<tr>
+         <td><strong>${b.guestName}</strong><br><span style="color:var(--ink3);font-size:12px">${b.guestPhone}</span></td>
+         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.apartmentTitle}</td>
+         <td>${b.checkIn}</td><td>${b.checkOut}</td>
+         <td>${b.totalPrice?.toLocaleString('ru')} ₽</td>
+         <td><span class="badge ${b.status==='confirmed'?'badge-conf':'badge-canc'}">${b.status==='confirmed'?'Подтверждена':'Отменена'}</span></td>
+       </tr>`).join('')}</tbody></table>`
+    : '<p style="color:var(--ink4);text-align:center;padding:20px">Броней пока нет</p>';
+}
+
+// ── BOOKINGS ──
+async function loadBookings() {
+  const bookings = await req('/api/admin/bookings');
+  document.getElementById('bookings-table').innerHTML = !bookings?.length
+    ? '<p style="color:var(--ink4);text-align:center;padding:20px">Броней нет</p>'
+    : `<table class="tbl"><thead><tr><th>Гость</th><th>Телефон</th><th>Квартира</th><th>Заезд</th><th>Выезд</th><th>Ночей</th><th>Сумма</th><th>Статус</th><th></th></tr></thead>
+       <tbody>${bookings.map(b=>`<tr>
+         <td><strong>${b.guestName}</strong></td>
+         <td>${b.guestPhone}</td>
+         <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${b.apartmentTitle}</td>
+         <td>${b.checkIn}</td><td>${b.checkOut}</td><td>${b.nights}</td>
+         <td>${b.totalPrice?.toLocaleString('ru')} ₽</td>
+         <td><span class="badge ${b.status==='confirmed'?'badge-conf':'badge-canc'}">${b.status==='confirmed'?'Подтверждена':'Отменена'}</span></td>
+         <td>${b.status==='confirmed'?`<button class="btn btn-danger btn-sm" onclick="cancelBooking('${b.id}')">✕</button>`:'—'}</td>
+       </tr>`).join('')}</tbody></table>`;
+}
+async function cancelBooking(id) {
+  if (!confirm('Отменить бронь?')) return;
+  await req(`/api/admin/bookings/${id}/cancel`, { method:'PATCH' });
+  toast('Бронь отменена');
+  loadBookings();
+}
+
+// ── SYNC ──
+async function loadSync() {
+  const status = await req('/api/admin/sync-status');
+  document.getElementById('sync-status').innerHTML = !status
+    ? '<p style="color:var(--ink4)">Нет данных</p>'
+    : status.map(s=>`<div class="sync-row">
+        <div>
+          <strong style="font-size:13px">${s.title||s.id}</strong>
+          <div style="font-size:11px;color:var(--ink4);margin-top:2px">
+            ${s.lastSync ? 'Обновлено: ' + new Date(s.lastSync).toLocaleString('ru') : 'Не синхронизировано'}
+            · ${s.occupiedCount} занятых периодов
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge ${s.active?'badge-live':'badge-draft'}">${s.active?'Активна':'Черновик'}</span>
+          <span class="${s.hasIcal?'rc-ok':'rc-no'}">${s.hasIcal?'✓ RC подключён':'— RC не настроен'}</span>
+          <a href="/api/ical/${s.id}" target="_blank" class="btn btn-outline btn-sm">iCal</a>
+        </div>
+      </div>`).join('');
+}
+async function forceSync() {
+  toast('Синхронизация…', false);
+  await req('/api/sync', { method: 'POST' });
+  toast('Синхронизировано!');
+  loadSync();
+}
+
+// ── APT EDITOR ──
+async function loadAptEditor(id) {
+  const apt = (await req('/api/admin/apartments'))?.find(a => a.id === id);
+  if (!apt) return;
+  curAptId = id; curAptData = apt;
+
+  document.getElementById('apt-page-title').textContent = apt.title || `Квартира ${id}`;
+  document.getElementById('apt-page-sub').textContent   = apt.active ? '🟢 Активна на сайте' : '🟡 Черновик';
+  document.getElementById('btn-toggle-active').textContent = apt.active ? 'Снять с публикации' : 'Опубликовать';
+
+  document.getElementById('f-title').value   = apt.title || '';
+  document.getElementById('f-city').value    = apt.city || '';
+  document.getElementById('f-address').value = apt.address || '';
+  document.getElementById('f-short').value   = apt.shortDesc || '';
+  document.getElementById('f-desc').value    = apt.description || '';
+  document.getElementById('f-price').value   = apt.price || '';
+  document.getElementById('f-guests').value  = apt.guests || 2;
+  document.getElementById('f-rooms').value   = apt.rooms || 1;
+  document.getElementById('f-area').value    = apt.area || '';
+  document.getElementById('f-floor').value   = apt.floor || '';
+  document.getElementById('f-rating').value  = apt.rating || '';
+  document.getElementById('f-reviews').value = apt.reviews || '';
+  document.getElementById('f-tags').value    = (apt.tags || []).join(', ');
+  document.getElementById('f-instant').checked = !!apt.instant;
+  document.getElementById('f-photos').value  = (apt.photos || []).join('\n');
+  document.getElementById('f-rcExport').value = apt.rcIcalExportUrl || '';
+  document.getElementById('f-rcImport').value = `${location.origin}/api/ical/${id}`;
+
+  // Amenities
+  selectedAmenities = new Set(apt.amenities || []);
+  renderAmenities();
+
+  // Custom amenities
+  const standard = new Set(AMENITY_LIST);
+  const custom = (apt.amenities || []).filter(a => !standard.has(a));
+  document.getElementById('f-amenities-custom').value = custom.join(', ');
+
+  // Photos preview
+  renderPhotos();
+  document.getElementById('f-photos').addEventListener('input', renderPhotos);
+
+  // Tabs reset
+  aptTab(document.querySelector('.tabs .tab'), 0);
+}
+
+function renderAmenities() {
+  const el = document.getElementById('amenities-btns');
+  el.innerHTML = AMENITY_LIST.map(a => {
+    const on = selectedAmenities.has(a);
+    return `<button class="btn btn-sm ${on?'btn-primary':'btn-outline'}" onclick="toggleAmenity('${a}',this)">${a}</button>`;
+  }).join('');
+}
+function toggleAmenity(name, el) {
+  selectedAmenities.has(name) ? selectedAmenities.delete(name) : selectedAmenities.add(name);
+  el.classList.toggle('btn-primary', selectedAmenities.has(name));
+  el.classList.toggle('btn-outline', !selectedAmenities.has(name));
+}
+function renderPhotos() {
+  const urls = document.getElementById('f-photos').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('photos-preview').innerHTML = urls.slice(0,6).map(u =>
+    `<img src="${u}" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line)" onerror="this.style.display='none'">`
+  ).join('');
+}
+
+async function saveApt() {
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = '…';
+
+  const photos = document.getElementById('f-photos').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const tags   = document.getElementById('f-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+
+  // Merge amenities
+  const custom = document.getElementById('f-amenities-custom').value.split(',').map(s=>s.trim()).filter(Boolean);
+  custom.forEach(a => selectedAmenities.add(a));
+
+  const body = {
+    title:       document.getElementById('f-title').value.trim(),
+    city:        document.getElementById('f-city').value.trim(),
+    address:     document.getElementById('f-address').value.trim(),
+    shortDesc:   document.getElementById('f-short').value.trim(),
+    description: document.getElementById('f-desc').value.trim(),
+    price:       +document.getElementById('f-price').value || 0,
+    guests:      +document.getElementById('f-guests').value || 2,
+    rooms:       +document.getElementById('f-rooms').value || 1,
+    area:        +document.getElementById('f-area').value || null,
+    floor:       +document.getElementById('f-floor').value || null,
+    rating:      +document.getElementById('f-rating').value || 0,
+    reviews:     +document.getElementById('f-reviews').value || 0,
+    instant:     document.getElementById('f-instant').checked,
+    tags, photos,
+    amenities:   [...selectedAmenities],
+    rcIcalExportUrl: document.getElementById('f-rcExport').value.trim(),
+  };
+
+  const res = await req(`/api/admin/apartments/${curAptId}`, {
+    method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body)
+  });
+
+  btn.disabled = false; btn.textContent = '💾 Сохранить';
+  if (res?.ok) {
+    toast('Сохранено!');
+    loadSidebarApts();
+    document.getElementById('apt-page-title').textContent = body.title || curAptId;
+  } else {
+    toast('Ошибка сохранения', true);
+  }
+}
+
+async function toggleActive() {
+  const apts = await req('/api/admin/apartments');
+  const apt = apts?.find(a => a.id === curAptId);
+  if (!apt) return;
+  const res = await req(`/api/admin/apartments/${curAptId}`, {
+    method: 'PATCH', headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ active: !apt.active })
+  });
+  if (res?.ok) {
+    toast(apt.active ? 'Снято с публикации' : 'Опубликовано!');
+    loadAptEditor(curAptId);
+    loadSidebarApts();
+  }
+}
+
+function aptTab(el, idx) {
+  if (el) {
+    document.querySelectorAll('.tabs .tab').forEach((t,i) => t.classList.toggle('on', i===idx));
+  }
+  [0,1,2].forEach(i => {
+    const t = document.getElementById(`apt-tab-${i}`);
+    if (t) t.style.display = i === idx ? '' : 'none';
+  });
+}
+
+// ── TOAST ──
+function toast(msg, err = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast on' + (err ? ' err' : '');
+  setTimeout(() => el.classList.remove('on'), 2800);
+}
+
+// INIT
+loadSidebarApts();
+loadDash();
+</script>
+</body>
+</html>
