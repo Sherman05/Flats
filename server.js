@@ -38,6 +38,56 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ══════════════════════════════
+// TELEGRAM УВЕДОМЛЕНИЯ
+// Задайте переменные окружения:
+//   TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+//   TELEGRAM_CHAT_ID=your_chat_id
+// Или впишите напрямую ниже.
+// ══════════════════════════════
+const TG_TOKEN   = process.env.TELEGRAM_BOT_TOKEN || '';
+const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID   || '';
+
+async function sendTelegram(text) {
+  if (!TG_TOKEN || !TG_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' })
+    });
+  } catch (err) {
+    console.warn('[Telegram] Ошибка:', err.message);
+  }
+}
+
+function formatBookingTelegram(booking, apt) {
+  return [
+    `🏠 <b>Новая бронь!</b>`,
+    ``,
+    `📍 <b>${apt.title}</b>`,
+    `📅 ${booking.checkIn} → ${booking.checkOut} (${booking.nights} ноч.)`,
+    `👤 ${booking.guestName}`,
+    `📞 ${booking.guestPhone}`,
+    booking.guestEmail ? `📧 ${booking.guestEmail}` : '',
+    booking.comment ? `💬 ${booking.comment}` : '',
+    ``,
+    `💰 ${booking.totalPrice.toLocaleString('ru')} ₽`,
+    `🆔 ${booking.id.slice(0, 8)}`,
+  ].filter(Boolean).join('\n');
+}
+
+function formatCancelTelegram(booking) {
+  return [
+    `❌ <b>Бронь отменена</b>`,
+    ``,
+    `📍 ${booking.apartmentTitle}`,
+    `📅 ${booking.checkIn} → ${booking.checkOut}`,
+    `👤 ${booking.guestName}`,
+    `🆔 ${booking.id.slice(0, 8)}`,
+  ].join('\n');
+}
+
+// ══════════════════════════════
 // БД  (JSON-файл, легко заменить на PostgreSQL)
 // ══════════════════════════════
 const DB_FILE = path.join(__dirname, 'data', 'db.json');
@@ -259,10 +309,14 @@ app.post('/api/bookings', (req, res) => {
 
   console.log(`[Бронь] ${booking.id.slice(0,8)} | ${apt.title} | ${checkIn}→${checkOut} | ${guestName}`);
 
+  // Telegram-уведомление хозяину
+  sendTelegram(formatBookingTelegram(booking, apt));
+
   // RC подхватит бронь автоматически через /api/ical/:id при следующем импорте
   res.status(201).json({ success: true, booking: {
     id: booking.id, apartmentTitle: booking.apartmentTitle,
-    checkIn, checkOut, nights, totalPrice: booking.totalPrice, status: 'confirmed'
+    checkIn, checkOut, nights, totalPrice: booking.totalPrice, status: 'confirmed',
+    city: apt.city, address: apt.address, guestName
   }});
 });
 
@@ -311,6 +365,10 @@ app.patch('/api/admin/bookings/:id/cancel', (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   db.bookings[idx].status = 'cancelled';
   dbWrite(db);
+
+  // Telegram-уведомление об отмене
+  sendTelegram(formatCancelTelegram(db.bookings[idx]));
+
   res.json({ ok: true });
 });
 
@@ -324,6 +382,23 @@ app.get('/api/admin/sync-status', (req, res) => {
     occupiedCount: db.icalCache[a.id]?.occupied?.length || 0,
   }));
   res.json(status);
+});
+
+// Настройки Telegram через API (альтернатива env-переменным)
+app.get('/api/admin/settings', (req, res) => {
+  res.json({
+    telegramConfigured: !!(TG_TOKEN && TG_CHAT_ID),
+    hasToken: !!TG_TOKEN,
+    hasChatId: !!TG_CHAT_ID,
+  });
+});
+
+app.post('/api/admin/test-telegram', async (req, res) => {
+  if (!TG_TOKEN || !TG_CHAT_ID) {
+    return res.status(400).json({ error: 'Telegram не настроен. Задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID' });
+  }
+  await sendTelegram('✅ <b>Тестовое сообщение</b>\n\nLuxStay Telegram-уведомления работают!');
+  res.json({ ok: true });
 });
 
 // ══════════════════════════════
